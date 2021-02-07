@@ -1,9 +1,10 @@
 package Agent;
 
 import Environnement.Case;
-import Environnement.Environnement;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Stack;
 
 public class Agent extends Thread {
 
@@ -11,27 +12,27 @@ public class Agent extends Thread {
     private Capteur capteur;
     private Effecteur effecteur;
     private static Point position;
+    private int uElec;
 
     /* ETAT BDI */
-    private Case[][] beliefs;
-    private Case[][] desires;
-    private Case[][] intentions;
+    private ArrayList<Case> beliefs;
+    private ArrayList<Case> desires;
+    private ArrayList<Case> intentions;
 
     public Agent(){
 
         isAlive = true;
 
+        capteur = new Capteur();
         effecteur = new Effecteur();
+
         position = new Point(0,0);
 
-        /* Le désire de l'agent est une carte vide */
-        desires = new Case[5][5];
-        for (int i = 0; i < desires.length; i++) {
-            for (int j = 0; j < desires.length; j++) {
-                desires[i][j] = new Case(new Point(i,j));
-            }
-        }
-        capteur = new Capteur(desires);
+        beliefs = new ArrayList<Case>();
+        desires = new ArrayList<Case>();
+        intentions = new ArrayList<Case>();
+
+        uElec = 20;
 
     }
 
@@ -57,23 +58,31 @@ public class Agent extends Thread {
 
     /* On met à jour les croyances de l'agent */
     public void updateState(){
-        beliefs = capteur.getCarte();
+        beliefs = capteur.getCaseNonVide();
+
     }
 
     public void chooseAction(){
-        /* Algorithme ici */
-        if(){
-            /* Fais rien */
-        }else{
-            AlgorithmeNonInformee();
-        }
-
 
     }
 
     public void AlgorithmeNonInformee(){
 
+        /* ALGORITHME BFS */
+
+        /* FIFO */
+        Stack<Noeud> pile = new Stack<Noeud>();
+        /*Solution*/
+        ArrayList<Noeud> solution = new ArrayList<Noeud>();
+
+        Noeud currentN = null;
+        /* Noeud Racine */
+        currentN = new Noeud(position, null);
+        solution.add(currentN);
+
     }
+
+    public void DFS(Noeud n)
 
 
     public static void setPosition(Point position) {

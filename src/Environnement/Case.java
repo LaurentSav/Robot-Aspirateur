@@ -16,6 +16,10 @@ public class Case {
         Agent = false;
     }
 
+    public void setPosition(Point position) {
+        this.position = position;
+    }
+
     public boolean isDirtyspace() {
         return dirtyspace;
     }
@@ -36,6 +40,14 @@ public class Case {
 
     public void setLostjewel(boolean lostjewel) {
         this.lostjewel = lostjewel;
+    }
+
+    public Point getPosition() {
+        return position;
+    }
+
+    public int distance(Case c){
+        return Math.abs(position.x - c.position.x) + Math.abs(position.y - c.position.y);
     }
 
     public String toString(){
