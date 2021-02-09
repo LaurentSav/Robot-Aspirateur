@@ -16,6 +16,13 @@ public class Case {
         Agent = false;
     }
 
+    public Case(Point p, boolean agent){
+        position = p;
+        dirtyspace = false;
+        lostjewel = false;
+        Agent = true;
+    }
+
     public void setPosition(Point position) {
         this.position = position;
     }

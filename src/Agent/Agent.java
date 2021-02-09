@@ -4,6 +4,7 @@ import Environnement.Case;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Queue;
 import java.util.Stack;
 
 public class Agent extends Thread {
@@ -11,11 +12,10 @@ public class Agent extends Thread {
     private Boolean isAlive;
     private Capteur capteur;
     private Effecteur effecteur;
-    private static Point position;
-    private int uElec;
+    private static Case agent;
 
     /* ETAT BDI */
-    private ArrayList<Case> beliefs;
+    private Case[][] beliefs;
     private ArrayList<Case> desires;
     private ArrayList<Case> intentions;
 
@@ -26,13 +26,11 @@ public class Agent extends Thread {
         capteur = new Capteur();
         effecteur = new Effecteur();
 
-        position = new Point(0,0);
+        agent = new Case(new Point(0,0), true);
 
-        beliefs = new ArrayList<Case>();
+        beliefs = new Case[5][5];
         desires = new ArrayList<Case>();
         intentions = new ArrayList<Case>();
-
-        uElec = 20;
 
     }
 
@@ -52,40 +50,47 @@ public class Agent extends Thread {
                 e.printStackTrace();
             }
         }
-
-
     }
 
     /* On met à jour les croyances de l'agent */
     public void updateState(){
-        beliefs = capteur.getCaseNonVide();
+        beliefs = capteur.getCarte();
+        updateDesires();
+    }
+
+    public void updateDesires(){
+        for (int i = 0; i < beliefs.length; i++) {
+            for (int j = 0; j < beliefs.length; j++) {
+                if(beliefs[i][j].isDirtyspace() || beliefs[i][j].isLostjewel()){
+                    desires.add(beliefs[i][j]);
+                }
+            }
+        }
+    }
+
+    public ArrayList<Case> chooseAction(){
+
+        if(desires.isEmpty()){
+            intentions.clear();
+        }else{
+            intentions = AlgorithmeNonInformee();
+        }
+        return intentions;
+    }
+
+    public ArrayList<Case> AlgorithmeNonInformee(){
+
+        Noeud nRacine = new Noeud(agent, null);
+        Queue<Noeud> queue = null;
+        queue.add(nRacine);
+
+        while(!queue.isEmpty()){
+
+        }
+
 
     }
 
-    public void chooseAction(){
-
-    }
-
-    public void AlgorithmeNonInformee(){
-
-        /* ALGORITHME BFS */
-
-        /* FIFO */
-        Stack<Noeud> pile = new Stack<Noeud>();
-        /*Solution*/
-        ArrayList<Noeud> solution = new ArrayList<Noeud>();
-
-        Noeud currentN = null;
-        /* Noeud Racine */
-        currentN = new Noeud(position, null);
-        solution.add(currentN);
-
-    }
-
-    public void DFS(Noeud n)
 
 
-    public static void setPosition(Point position) {
-        Agent.position = position;
-    }
 }

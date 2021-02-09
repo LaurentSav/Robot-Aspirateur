@@ -1,48 +1,63 @@
 package Agent;
 
+import Environnement.Case;
+
 import java.awt.*;
 
 public class Noeud {
-    private Point position;
+    private Case c;
     private Noeud parent;
-    private int profondeur;
+    private String action;
     private int cout;
 
-    public Noeud(Point pos, Noeud parent){
-        position = pos;
+    public Noeud(Case ca, Noeud parent){
+        c = ca;
         this.parent = parent;
+        int cout = 0;
+        String action = null;
+    }
+
+    public Noeud(Case c){
+        this.c = c;
+        this.parent = null;
+        int cout = 0;
+        String action = null;
     }
 
     public void setParent(Noeud parent) {
         this.parent = parent;
     }
 
-    public void setProfondeur(int profondeur) {
-        this.profondeur = profondeur;
-    }
-
     public void setCout(int cout) {
         this.cout = cout;
-    }
-
-    public Noeud getParent() {
-        return parent;
     }
 
     public int getCout() {
         return cout;
     }
 
-    public int getProfondeur() {
-        return profondeur;
+    public Noeud getParent() {
+        return parent;
     }
 
-    public Point getPosition() {
-        return position;
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
-    public void setPosition(Point position) {
-        this.position = position;
+    public String getAction() {
+        return action;
     }
 
+    public Case getC() {
+        return c;
+    }
+    public void setC(Case c) {
+        this.c = c;
+    }
+
+    @Override
+    public String toString() {
+        return "Noeud{" + c.getPosition() + "}";
+    }
 }
