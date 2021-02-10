@@ -9,19 +9,30 @@ public class Noeud {
     private Noeud parent;
     private String action;
     private int cout;
+    private boolean isVisited;
 
     public Noeud(Case ca, Noeud parent){
         c = ca;
         this.parent = parent;
         int cout = 0;
         String action = null;
+        isVisited = false;
     }
 
-    public Noeud(Case c){
-        this.c = c;
-        this.parent = null;
+    public Noeud(Case ca, Noeud parent, String action){
+        c = ca;
+        this.parent = parent;
         int cout = 0;
-        String action = null;
+        this.action = action;
+        isVisited = false;
+    }
+
+    public boolean isVisited() {
+        return isVisited;
+    }
+
+    public void setVisited(boolean visited) {
+        isVisited = visited;
     }
 
     public void setParent(Noeud parent) {
@@ -58,6 +69,6 @@ public class Noeud {
 
     @Override
     public String toString() {
-        return "Noeud{" + c.getPosition() + "}";
+        return "Noeud{" + action + "}";
     }
 }

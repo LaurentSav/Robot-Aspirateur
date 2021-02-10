@@ -3,9 +3,7 @@ package Agent;
 import Environnement.Case;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Queue;
-import java.util.Stack;
+import java.util.*;
 
 public class Agent extends Thread {
 
@@ -17,7 +15,7 @@ public class Agent extends Thread {
     /* ETAT BDI */
     private Case[][] beliefs;
     private ArrayList<Case> desires;
-    private ArrayList<Case> intentions;
+    private ArrayList<Noeud> intentions;
 
     public Agent(){
 
@@ -30,7 +28,7 @@ public class Agent extends Thread {
 
         beliefs = new Case[5][5];
         desires = new ArrayList<Case>();
-        intentions = new ArrayList<Case>();
+        intentions = new ArrayList<Noeud>();
 
     }
 
@@ -43,9 +41,11 @@ public class Agent extends Thread {
             capteur.Observation();
             updateState();
             chooseAction();
+            System.out.println(intentions);
+            effecteur.doit(intentions);
 
             try{
-                Thread.sleep(500);
+                Thread.sleep(1000);
             }catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -68,7 +68,7 @@ public class Agent extends Thread {
         }
     }
 
-    public ArrayList<Case> chooseAction(){
+    public ArrayList<Noeud> chooseAction(){
 
         if(desires.isEmpty()){
             intentions.clear();
@@ -78,19 +78,71 @@ public class Agent extends Thread {
         return intentions;
     }
 
-    public ArrayList<Case> AlgorithmeNonInformee(){
+    /* ALGORITHME DFS */
+    public ArrayList<Noeud> AlgorithmeNonInformee(){
 
         Noeud nRacine = new Noeud(agent, null);
-        Queue<Noeud> queue = null;
-        queue.add(nRacine);
+        Stack<Noeud> stack = new Stack<Noeud>();
+        ArrayList<Point> visit = new ArrayList<Point>();
+        stack.push(nRacine);
 
-        while(!queue.isEmpty()){
+        while(!stack.isEmpty()){
+            Noeud n = stack.pop();
+            if(visit.contains(n.getC().getPosition())){
+                n.setVisited(true);
+            }
+            if(!n.isVisited()){
+                n.setVisited(true);
+                visit.add(n.getC().getPosition());
+                int posX = n.getC().getPosition().x;
+                int posY = n.getC().getPosition().y;
 
+                /* Robot sur case non vide */
+                if(beliefs[posX][posY].isLostjewel() || beliefs[posX][posY].isDirtyspace()){
+                    ArrayList<Noeud> path = new ArrayList<Noeud>();
+                    if(beliefs[posX][posY].isLostjewel()){
+                        path.add(new Noeud(beliefs[posX][posY],n,"jewel"));
+                    }
+                    if(beliefs[posX][posY].isDirtyspace()){
+                        path.add(new Noeud(beliefs[posX][posY],n,"dirt"));
+                    }
+                    while(n.getParent() != null){
+                        path.add(n);
+                        n = n.getParent();
+                    }
+                    Collections.reverse(path);
+                    return path;
+                }
+
+                /* Mouvement Haut */
+                if(posX - 1 >= 0){
+                    stack.push(new Noeud(beliefs[posX - 1][posY],n,"haut"));
+                }
+
+                /* Mouvement Bas */
+                if(posX + 1 < 5){
+                    stack.push(new Noeud(beliefs[posX + 1][posY],n,"bas"));
+                }
+
+                /* Mouvement Gauche */
+                if(posY - 1 >= 0){
+                    stack.push(new Noeud(beliefs[posX][posY - 1],n,"gauche"));
+                }
+
+                /* Mouvement Droite */
+                if(posY + 1 < 5){
+                    stack.push(new Noeud(beliefs[posX][posY + 1],n,"droite"));
+                }
+            }
         }
-
-
+        return null;
     }
 
+    public static void setAgent(Case agent) {
+        Agent.agent = agent;
+    }
 
-
+    public static Case getAgent() {
+        return agent;
+    }
 }
