@@ -19,13 +19,10 @@ public class Agent extends Thread {
     private ArrayList<Case> desires; //Désires
     private ArrayList<Noeud> intentions; //Intentions
 
-    private static int perf;
-
     public Agent(){
 
         isAlive = true;
         loopEpisode = 0;
-        perf = 0;
         perfMini = Integer.MAX_VALUE;
 
         capteur = new Capteur();
@@ -62,7 +59,8 @@ public class Agent extends Thread {
     public void mesurePerformance(){
 
         if(loopEpisode < 3){
-            perf += distanceManhattan(desires.get(0), agent) + 1;
+
+
             loopEpisode++;
         }else{
             /* On réinitialise l'épisode */
@@ -252,11 +250,4 @@ public class Agent extends Thread {
         return agent;
     }
 
-    public static void setPerf(int perf) {
-        Agent.perf = perf;
-    }
-
-    public static int getPerf() {
-        return perf;
-    }
 }
