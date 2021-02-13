@@ -11,15 +11,22 @@ public class Agent extends Thread {
     private Capteur capteur;
     private Effecteur effecteur;
     private static Case agent;
+    private int loopEpisode;
+    private int perfMini;
 
     /* ETAT BDI */
-    private Case[][] beliefs;
-    private ArrayList<Case> desires;
-    private ArrayList<Noeud> intentions;
+    private Case[][] beliefs; //Croyances
+    private ArrayList<Case> desires; //Désires
+    private ArrayList<Noeud> intentions; //Intentions
+
+    private static int perf;
 
     public Agent(){
 
         isAlive = true;
+        loopEpisode = 0;
+        perf = 0;
+        perfMini = Integer.MAX_VALUE;
 
         capteur = new Capteur();
         effecteur = new Effecteur();
@@ -52,14 +59,31 @@ public class Agent extends Thread {
         }
     }
 
-    /* On met à jour les croyances de l'agent */
+    public void mesurePerformance(){
+
+        if(loopEpisode < 3){
+            perf += distanceManhattan(desires.get(0), agent) + 1;
+            loopEpisode++;
+        }else{
+            /* On réinitialise l'épisode */
+            loopEpisode = 0;
+
+        }
+    }
+
+    /* On met à jour les états de l'agent */
     public void updateState(){
         beliefs = capteur.getCarte();
         updateDesires();
     }
 
+    /* Mise à jour des désires */
     public void updateDesires(){
+
+        /* On vide le tableau des désires */
         desires.clear();
+
+        /* On remplit le tableau des désires avec les cases non vides de l'environnement */
         for (int i = 0; i < beliefs.length; i++) {
             for (int j = 0; j < beliefs.length; j++) {
                 if(beliefs[i][j].isDirtyspace() || beliefs[i][j].isLostjewel()){
@@ -67,10 +91,20 @@ public class Agent extends Thread {
                 }
             }
         }
+
+        for (int i = 0; i < desires.size(); i++) {
+            desires.get(i).setDistance(distanceManhattan(desires.get(i), agent));
+        }
+
+        /* On tri le tableau des désires en fonction de la distance entre l'agent et la case non vide */
+        desires.sort(Comparator.comparing(a -> a.getDistance()));
+
     }
 
-    public ArrayList<Noeud> chooseAction(){
+    /* On remplit le tableau des intentions grâce aux algorithmes informé ou non informé. */
 
+    public ArrayList<Noeud> chooseAction(){
+        /* Si le tableau des désires est vide, le robot ne fait rien */
         if(desires.isEmpty()){
             intentions.clear();
         }else{
@@ -216,5 +250,13 @@ public class Agent extends Thread {
 
     public static Case getAgent() {
         return agent;
+    }
+
+    public static void setPerf(int perf) {
+        Agent.perf = perf;
+    }
+
+    public static int getPerf() {
+        return perf;
     }
 }

@@ -8,8 +8,8 @@ import java.util.Random;
 public class Environnement extends Thread{
 
     private static Case[][] Carte;
-    private double DirtPercentage = 50;
-    private double JewelPercentage = 10;
+    private double DirtPercentage = 10;
+    private double JewelPercentage = 5;
 
 
     public Environnement() {

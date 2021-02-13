@@ -14,6 +14,7 @@ public class Capteur {
         this.carte = null;
     }
 
+    /* Observation de l'environnement */
     public void Observation(){
         carte = Environnement.getCarte();
     }

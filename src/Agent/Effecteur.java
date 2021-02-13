@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 public class Effecteur {
 
+    /* Effectue les actions contenues dans le tableau des intentions */
+
     public synchronized void doit(ArrayList<Noeud> intention){
         if(intention != null){
             for(Noeud n : intention){
@@ -42,7 +44,12 @@ public class Effecteur {
                         Environnement.setCarte(temp);
                         break;
                     case "dirt":
+                        /* Si il y'a un bijoux et une poussière sur la case, alors le bijoux et la poussière seront aspirés */
+                        if(temp[p.x][p.y].isDirtyspace() && temp[p.x][p.y].isLostjewel()){
+                            Agent.setPerf(Agent.getPerf() + 10);
+                        }
                         temp[p.x][p.y].setDirtyspace(false);
+                        temp[p.x][p.y].setLostjewel(false);
                         Environnement.setCarte(temp);
                         break;
                     case "jewel":

@@ -8,6 +8,7 @@ public class Case {
     private boolean lostjewel;
     private boolean Agent;
     private Point position;
+    private int distance;
 
     public Case(Point p){
         position = p;
@@ -23,9 +24,15 @@ public class Case {
         Agent = true;
     }
 
-    public void setPosition(Point position) {
-        this.position = position;
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setPosition(Point position) { this.position = position; }
 
     public boolean isDirtyspace() {
         return dirtyspace;

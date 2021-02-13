@@ -5,6 +5,7 @@ import Environnement.Case;
 import java.awt.*;
 
 public class Noeud {
+
     private Case c;
     private Noeud parent;
     private String action;
