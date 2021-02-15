@@ -11,12 +11,13 @@ public class Effecteur {
     private int perf;
 
     public Effecteur(){
-        perf = 0;
+        perf = 1;
     }
     /* Effectue les actions contenues dans le tableau des intentions */
 
     public synchronized void doit(ArrayList<Noeud> intention){
         if(intention != null){
+            perf = 0;
             for(Noeud n : intention){
                 Case[][] temp = Environnement.getCarte();
                 Point p = n.getC().getPosition();
@@ -26,7 +27,7 @@ public class Effecteur {
                         temp[p.x][p.y - 1].setAgent(false);
                         Agent.getAgent().setPosition(new Point(p.x, p.y));
                         Environnement.setCarte(temp);
-                        perf++;
+                        perf -= 10;
                         break;
 
                     case "gauche":
@@ -34,7 +35,7 @@ public class Effecteur {
                         temp[p.x][p.y + 1].setAgent(false);
                         Agent.getAgent().setPosition(new Point(p.x, p.y));
                         Environnement.setCarte(temp);
-                        perf++;
+                        perf -= 10 ;
                         break;
 
                     case "haut":
@@ -42,7 +43,7 @@ public class Effecteur {
                         temp[p.x + 1][p.y].setAgent(false);
                         Agent.getAgent().setPosition(new Point(p.x, p.y));
                         Environnement.setCarte(temp);
-                        perf++;
+                        perf -= 10 ;
                         break;
 
                     case "bas":
@@ -50,25 +51,26 @@ public class Effecteur {
                         temp[p.x - 1][p.y].setAgent(false);
                         Agent.getAgent().setPosition(new Point(p.x, p.y));
                         Environnement.setCarte(temp);
-                        perf++;
+                        perf -= 10 ;
                         break;
                     case "dirt":
                         /* Si il y'a un bijoux et une poussière sur la case, alors le bijoux et la poussière seront aspirés */
-                        if(temp[p.x][p.y].isDirtyspace() && temp[p.x][p.y].isLostjewel()){
-                            perf = perf - 6;
+                        if(temp[p.x][p.y].isLostjewel()){
                         }
                         temp[p.x][p.y].setDirtyspace(false);
                         temp[p.x][p.y].setLostjewel(false);
                         Environnement.setCarte(temp);
-                        perf++;
+                        perf += 30;
                         break;
                     case "jewel":
                         Environnement.getCarte()[p.x][p.y].setLostjewel(false);
-                        perf++;
+                        perf += 60;
                 }
             }
         }
     }
+
+
 
     public int getPerf() {
         return perf;

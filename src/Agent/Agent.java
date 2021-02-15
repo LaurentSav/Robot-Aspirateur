@@ -1,6 +1,7 @@
 package Agent;
 
 import Environnement.Case;
+import com.sun.source.tree.ClassTree;
 
 import java.awt.*;
 import java.util.*;
@@ -13,6 +14,8 @@ public class Agent extends Thread {
     private static Case agent;
     private int loopEpisode;
     private int perfMini;
+    private final double LEARN_COEF = 0.08;//Coefficient d'apprentissage
+    private final int MAX_CAPACITY = 5;//Capacite maximale du reservoir de l'agent
 
     /* ETAT BDI */
     private Case[][] beliefs; //Croyances
@@ -39,20 +42,26 @@ public class Agent extends Thread {
     @Override
     public void run(){
         System.out.println("S");
-
+        int roundPerf = 1;
+        double waitCoef = 10.000;
+        double learnValue = 0;
         while(true){
-
             capteur.Observation();
             updateState();
             chooseAction();
-            System.out.println(intentions);
             effecteur.doit(intentions);
+            learnValue = evaluation(roundPerf)*LEARN_COEF;
+            System.out.println("learn value : " + learnValue);
+            waitCoef += waitCoef*learnValue;
 
+            System.out.println("This round's wait time : " +Math.abs(waitCoef*1000) + " ms");
             try{
-                Thread.sleep(1000);
+                Thread.sleep(Math.round(1000*Math.abs(waitCoef)));
             }catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            roundPerf = effecteur.getPerf();
+
         }
     }
 
@@ -101,19 +110,26 @@ public class Agent extends Thread {
 
     /* On remplit le tableau des intentions grâce aux algorithmes informé ou non informé. */
 
-    public ArrayList<Noeud> chooseAction(){
+    public void chooseAction(){
+        int learnValue = 0;
         /* Si le tableau des désires est vide, le robot ne fait rien */
         if(desires.isEmpty()){
             intentions.clear();
         }else{
             //intentions = AlgorithmeNonInformee();
-            intentions = AlgorithmeInformee();
+
+            // Algo informee
+            intentions = AlgorithmeInformee(agent);
+            for (int i = 1; i < desires.size() && i<MAX_CAPACITY; i++){
+                //Algo recherche autant de case vides qu'on peut dans la limite de capacite de l'aspirateur
+                intentions.addAll(AlgorithmeInformee(intentions.get(intentions.size() - 1).getC()));
+            }
         }
-        return intentions;
+
     }
 
     /* ALGORITHME DFS */
-    public ArrayList<Noeud> AlgorithmeNonInformee(){
+    public ArrayList<Noeud> AlgorithmeNonInformee(Case agent){
 
         Noeud nRacine = new Noeud(agent, null);
         Stack<Noeud> stack = new Stack<Noeud>();
@@ -145,6 +161,7 @@ public class Agent extends Thread {
                         n = n.getParent();
                     }
                     Collections.reverse(path);
+
                     return path;
                 }
 
@@ -174,7 +191,7 @@ public class Agent extends Thread {
 
     /* ALGORITHME BFS */
 
-    public ArrayList<Noeud> AlgorithmeInformee(){
+    public ArrayList<Noeud> AlgorithmeInformee(Case agent){
 
         /* Noeud Racine */
         Noeud nRacine = new Noeud(agent, null);
@@ -207,7 +224,9 @@ public class Agent extends Thread {
                     path.add(n);
                     n = n.getParent();
                 }
+
                 Collections.reverse(path);
+                desires.remove(0);
                 return path;
             }
 
@@ -236,6 +255,33 @@ public class Agent extends Thread {
 
         }
         return null;
+    }
+
+/*
+    public float learn(float waitTime, int Perf){
+        updateState();
+
+        effecteur.setPerf( effecteur.getPerf()* (int)(Math.pow(0.8,desires.size())));
+        System.out.println("Current perf " + effecteur.getPerf());
+        System.out.println("Last perf " + Perf);
+        float learningCoef = effecteur.getPerf() / Perf;
+        float newTime = (float) (waitTime + 0.2*(waitTime*learningCoef));
+        if (newTime >=  Math.abs(waitTime*2)){ newTime = waitTime*2;}
+        return newTime;
+    }*/
+
+    public double evaluation(int lastPerf){
+        updateState();
+        effecteur.setPerf(effecteur.getPerf()-10*desires.size());
+        double learnValue = 0;
+
+        if (lastPerf != 0 ) {
+            learnValue = (effecteur.getPerf() - lastPerf)/lastPerf;
+
+        }else {
+            learnValue = 1;
+        }
+        return learnValue;
     }
 
     public int distanceManhattan(Case c1, Case c2){
