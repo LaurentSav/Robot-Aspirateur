@@ -5,6 +5,7 @@ import com.sun.source.tree.ClassTree;
 
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Agent extends Thread {
 
@@ -42,25 +43,18 @@ public class Agent extends Thread {
     @Override
     public void run(){
         System.out.println("S");
-        int roundPerf = 1;
-        double waitCoef = 10.000;
-        double learnValue = 0;
+
         while(true){
             capteur.Observation();
             updateState();
             chooseAction();
             effecteur.doit(intentions);
-            learnValue = evaluation(roundPerf)*LEARN_COEF;
-            System.out.println("learn value : " + learnValue);
-            waitCoef += waitCoef*learnValue;
-
-            System.out.println("This round's wait time : " +Math.abs(waitCoef*1000) + " ms");
+            System.out.println("intentions : " +intentions);
             try{
-                Thread.sleep(Math.round(1000*Math.abs(waitCoef)));
+                Thread.sleep(Math.round(1000));
             }catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            roundPerf = effecteur.getPerf();
 
         }
     }
@@ -118,12 +112,14 @@ public class Agent extends Thread {
         }else{
             //intentions = AlgorithmeNonInformee();
 
-            // Algo informee
-            intentions = AlgorithmeInformee(agent);
-            for (int i = 1; i < desires.size() && i<MAX_CAPACITY; i++){
-                //Algo recherche autant de case vides qu'on peut dans la limite de capacite de l'aspirateur
-                intentions.addAll(AlgorithmeInformee(intentions.get(intentions.size() - 1).getC()));
+            // Algo Astar
+            Noeud n = AlgorithmeAlgo( desires.get(desires.size()-1), new Noeud(agent, null), null);
+            while(n != null){
+                intentions.add(n);
+                n = n.getParent();
             }
+            Collections.reverse(intentions);
+
         }
 
     }
@@ -131,10 +127,10 @@ public class Agent extends Thread {
     /* ALGORITHME DFS */
     public ArrayList<Noeud> AlgorithmeNonInformee(Case agent){
 
-        Noeud nRacine = new Noeud(agent, null);
+        Noeud racine = new Noeud(agent, null);
         Stack<Noeud> stack = new Stack<Noeud>();
         ArrayList<Point> visit = new ArrayList<Point>();
-        stack.push(nRacine);
+        stack.push(racine);
 
         while(!stack.isEmpty()){
             Noeud n = stack.pop();
@@ -151,10 +147,10 @@ public class Agent extends Thread {
                 if(beliefs[posX][posY].isLostjewel() || beliefs[posX][posY].isDirtyspace()){
                     ArrayList<Noeud> path = new ArrayList<Noeud>();
                     if(beliefs[posX][posY].isLostjewel()){
-                        path.add(new Noeud(beliefs[posX][posY],n,"jewel"));
+                        path.add(new Noeud(beliefs[posX][posY],n, Noeud.Action.PICKUP));
                     }
                     if(beliefs[posX][posY].isDirtyspace()){
-                        path.add(new Noeud(beliefs[posX][posY],n,"dirt"));
+                        path.add(new Noeud(beliefs[posX][posY],n,Noeud.Action.VACUUM));
                     }
                     while(n.getParent() != null){
                         path.add(n);
@@ -167,22 +163,22 @@ public class Agent extends Thread {
 
                 /* Mouvement Haut */
                 if(posX - 1 >= 0){
-                    stack.push(new Noeud(beliefs[posX - 1][posY],n,"haut"));
+                    stack.push(new Noeud(beliefs[posX - 1][posY],n, Noeud.Action.UP));
                 }
 
                 /* Mouvement Bas */
                 if(posX + 1 < 5){
-                    stack.push(new Noeud(beliefs[posX + 1][posY],n,"bas"));
+                    stack.push(new Noeud(beliefs[posX + 1][posY],n, Noeud.Action.DOWN));
                 }
 
                 /* Mouvement Gauche */
                 if(posY - 1 >= 0){
-                    stack.push(new Noeud(beliefs[posX][posY - 1],n,"gauche"));
+                    stack.push(new Noeud(beliefs[posX][posY - 1],n, Noeud.Action.LEFT));
                 }
 
                 /* Mouvement Droite */
                 if(posY + 1 < 5){
-                    stack.push(new Noeud(beliefs[posX][posY + 1],n,"droite"));
+                    stack.push(new Noeud(beliefs[posX][posY + 1],n, Noeud.Action.RIGHT));
                 }
             }
         }
@@ -191,13 +187,13 @@ public class Agent extends Thread {
 
     /* ALGORITHME BFS */
 
-    public ArrayList<Noeud> AlgorithmeInformee(Case agent){
+   /* public ArrayList<Noeud> AlgorithmeInformee(Case agent){
 
-        /* Noeud Racine */
-        Noeud nRacine = new Noeud(agent, null);
+        *//* Noeud Racine *//*
+        Noeud racine = new Noeud(agent, null);
         Stack<Noeud> stack = new Stack<Noeud>();
         Noeud nBut = new Noeud(desires.get(0), null);
-        stack.push(nRacine);
+        stack.push(racine);
         boolean firstloop = true;
         int dParent = 0;
 
@@ -231,22 +227,22 @@ public class Agent extends Thread {
             }
 
             if(dFils < dParent || firstloop){
-                /* Mouvement Haut */
+                *//* Mouvement Haut *//*
                 if(posX - 1 >= 0){
                     stack.push(new Noeud(beliefs[posX - 1][posY],n,"haut"));
                 }
 
-                /* Mouvement Bas */
+                *//* Mouvement Bas *//*
                 if(posX + 1 < 5){
                     stack.push(new Noeud(beliefs[posX + 1][posY],n,"bas"));
                 }
 
-                /* Mouvement Gauche */
+                *//* Mouvement Gauche *//*
                 if(posY - 1 >= 0){
                     stack.push(new Noeud(beliefs[posX][posY - 1],n,"gauche"));
                 }
 
-                /* Mouvement Droite */
+                *//* Mouvement Droite *//*
                 if(posY + 1 < 5){
                     stack.push(new Noeud(beliefs[posX][posY + 1],n,"droite"));
                 }
@@ -255,7 +251,78 @@ public class Agent extends Thread {
 
         }
         return null;
+    }*/
+
+    public Noeud AlgorithmeAlgo(Case nBut, Noeud racine, ArrayList<Noeud> list){
+        if( list == null){
+            list = new ArrayList(List.of(racine));
+        }
+
+
+        if(racine.getC().isDirtyspace()){
+            Noeud n = new Noeud(racine.getC(), racine, Noeud.Action.VACUUM);
+            setNodePerformance(30, n);
+            list.add(n);
+        }
+
+        if(racine.getC().isLostjewel()){
+            Noeud n = new Noeud(racine.getC(), racine, Noeud.Action.PICKUP);
+            setNodePerformance(60, n);
+            list.add(n);
+        }
+
+        int posX = racine.getC().getPosition().x;
+        int posY = racine.getC().getPosition().y;
+
+        if (posX - 1 >= 0) {
+            Noeud n = new Noeud(beliefs[posX - 1][posY], racine, Noeud.Action.UP);
+            setNodePerformance(-10, n);
+            list.add(n);
+        }
+
+        if (posX + 1 < 5) {
+            Noeud n = new Noeud(beliefs[posX + 1][posY], racine, Noeud.Action.DOWN);
+            setNodePerformance(-10, n);
+            list.add(n);
+        }
+
+        if (posY - 1 >= 0) {
+            Noeud n = new Noeud(beliefs[posX][posY - 1], racine, Noeud.Action.LEFT);
+            setNodePerformance(-10, n);
+            list.add(n);
+        }
+
+        if (posY + 1 < 5) {
+            Noeud n = new Noeud(beliefs[posX][posY + 1], racine, Noeud.Action.RIGHT);
+            setNodePerformance(-10, n);
+            list.add(n);;
+        }
+        if(posX == nBut.getPosition().x && posY == nBut.getPosition().y){
+            if(racine.getC().isLostjewel()){
+                Noeud n = new Noeud(racine.getC(), racine, Noeud.Action.PICKUP);
+                setNodePerformance(60, n);
+                return n;
+            }
+
+            if(racine.getC().isDirtyspace()){
+                Noeud n = new Noeud(racine.getC(), racine, Noeud.Action.VACUUM);
+                setNodePerformance(30, n);
+                if(racine.getC().isLostjewel()){
+                    setNodePerformance(-40, n);
+                }
+                return n;
+            }
+
+            return racine;
+        }
+
+        list.remove(racine);
+
+        return AlgorithmeAlgo(nBut, evaluateBest(list), list);
+
+
     }
+
 
 /*
     public float learn(float waitTime, int Perf){
@@ -284,6 +351,20 @@ public class Agent extends Thread {
         return learnValue;
     }
 
+
+    private void setNodePerformance(int moveCost, Noeud node){
+        node.setPerformance(moveCost);
+    }
+
+    private Noeud evaluateBest(List<Noeud> actions){
+        Noeud bestNode = actions.get(0);
+        for (Noeud n: actions) {
+            if(n.getPerformance() >= bestNode.getPerformance()){
+                bestNode = n;
+            }
+        }
+        return bestNode;
+    }
     public int distanceManhattan(Case c1, Case c2){
         return Math.abs(c1.getPosition().x - c2.getPosition().x) + Math.abs(c1.getPosition().y - c2.getPosition().y);
     }
