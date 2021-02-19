@@ -15,7 +15,7 @@ public class Noeud {
     private Action action;
     private int cout;
     private boolean isVisited;
-    private int Performance ;
+    private double Performance ;
 
     public Noeud(Case ca, Noeud parent){
         c = ca;
@@ -27,6 +27,7 @@ public class Noeud {
             cout = parent.getCout();
         }
         action = Action.START;
+        //action = null;
         isVisited = false;
     }
 
@@ -78,11 +79,11 @@ public class Noeud {
         this.c = c;
     }
 
-    public void setPerformance(int performance){ this.Performance += performance;}
+    public void setPerformance(double performance){ this.Performance += performance;}
 
 
 
-    public int getPerformance() {
+    public double getPerformance() {
         return Performance;
     }
 

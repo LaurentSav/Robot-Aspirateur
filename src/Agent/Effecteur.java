@@ -70,6 +70,10 @@ public class Effecteur {
                         break;
 
                 }
+                System.out.println( " action : " + n.getAction() + " x = " + n.getC().getPosition().x + " y = " + n.getC().getPosition().y );
+                if(n == intention.get(intention.size()-1)){
+                    System.out.println(" ---FIN ACTION--- ");
+                }
             }
         }
     }
