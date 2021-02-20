@@ -27,7 +27,6 @@ public class Noeud {
             cout = parent.getCout();
         }
         action = Action.START;
-        //action = null;
         isVisited = false;
     }
 

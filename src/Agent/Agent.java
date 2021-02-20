@@ -4,6 +4,7 @@ import Environnement.Case;
 import com.sun.source.tree.ClassTree;
 
 import java.awt.*;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.List;
 
@@ -48,10 +49,10 @@ public class Agent extends Thread {
             capteur.Observation();
             updateState();
             chooseAction();
-            System.out.println("intentions : " +intentions);
             effecteur.doit(intentions);
+            System.out.println("intentions : " +intentions);
             try{
-                Thread.sleep(Math.round(1000));
+                Thread.sleep(Math.round(2000));
             }catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -110,16 +111,33 @@ public class Agent extends Thread {
         if(desires.isEmpty()){
             intentions.clear();
         }else{
-            //intentions = AlgorithmeNonInformee();
-
-            // Algo Astar
+            //La case que l'agent cible
             System.out.println(" But :  x = " + desires.get(desires.size()-1).getPosition().x + " y = " + desires.get(desires.size()-1).getPosition().y);
-            Noeud n = AlgorithmeAlgo( desires.get(desires.size()-1), new Noeud(agent, null), null);
+
+            //intentions = AlgorithmeNonInformee(agent);
+
+            // Algorithme Informe
+            ArrayList<Case> visited = new ArrayList<>();
+            Noeud n = AlgorithmeAStar( desires.get(desires.size()-1), new Noeud(agent, null), null, visited);
             while(n.getParent() != null){
+
+                // On ajoute une action si la case n'est pas vide.
+                // Si la case a de la poussière et un bijou, on ajoute "vacuum" puis "pick up".
+                // L'ordre d'action sera inversé par la suite.
+                if(n.getC().isDirtyspace()){
+                    Noeud action = new Noeud(n.getC(), n.getParent(), Noeud.Action.VACUUM);
+                    intentions.add(action);
+                }
+                if(n.getC().isLostjewel()){
+                    Noeud action = new Noeud(n.getC(), n.getParent(), Noeud.Action.PICKUP);
+                    intentions.add(action);
+                }
                 intentions.add(n);
                 n = n.getParent();
             }
 
+            // On inverse la liste car la liste des actions est récupéré depuis le but jusqu'au noeud racine.
+            // Ainsi, avant d'inverser la liste, l'agent ferait la dernière action en premier et inversement...
             Collections.reverse(intentions);
 
         }
@@ -187,142 +205,125 @@ public class Agent extends Thread {
         return null;
     }
 
-    /* ALGORITHME BFS */
+    /*
+    * ALGORITHME A*
+    * La fonction A* retourne le dernier noeud de la solution.
+    * A partir de ce noeud, on peut reconstituer le chemin optimal à prendre
+    *  pour atteindre le but grâce aux noeuds parents.
+    * @param  ArrayList<Noeud> list:  Cette liste contient l'ensemble des noeud que l'on peut encore explorer.
+    *                               Elle représente l'ensemble des f-contours.
+    *
+    */
 
-   /* public ArrayList<Noeud> AlgorithmeInformee(Case agent){
+    public Noeud AlgorithmeAStar(Case nBut, Noeud racine, ArrayList<Noeud> list, ArrayList<Case> visited) {
 
-        *//* Noeud Racine *//*
-        Noeud racine = new Noeud(agent, null);
-        Stack<Noeud> stack = new Stack<Noeud>();
-        Noeud nBut = new Noeud(desires.get(0), null);
-        stack.push(racine);
-        boolean firstloop = true;
-        int dParent = 0;
-
-        while(!stack.isEmpty()){
-            Noeud n = stack.pop();
-            int posX = n.getC().getPosition().x;
-            int posY = n.getC().getPosition().y;
-
-            int dFils = distanceManhattan(n.getC(), nBut.getC());
-
-            if(!firstloop){
-                dParent = distanceManhattan(n.getParent().getC(), nBut.getC());
-            }
-
-            if(posX == nBut.getC().getPosition().x && posY == nBut.getC().getPosition().y){
-                ArrayList<Noeud> path = new ArrayList<Noeud>();
-                if(beliefs[posX][posY].isLostjewel()){
-                    path.add(new Noeud(beliefs[posX][posY],n,"jewel"));
-                }
-                if(beliefs[posX][posY].isDirtyspace()){
-                    path.add(new Noeud(beliefs[posX][posY],n,"dirt"));
-                }
-                while(n.getParent() != null){
-                    path.add(n);
-                    n = n.getParent();
-                }
-
-                Collections.reverse(path);
-                desires.remove(0);
-                return path;
-            }
-
-            if(dFils < dParent || firstloop){
-                *//* Mouvement Haut *//*
-                if(posX - 1 >= 0){
-                    stack.push(new Noeud(beliefs[posX - 1][posY],n,"haut"));
-                }
-
-                *//* Mouvement Bas *//*
-                if(posX + 1 < 5){
-                    stack.push(new Noeud(beliefs[posX + 1][posY],n,"bas"));
-                }
-
-                *//* Mouvement Gauche *//*
-                if(posY - 1 >= 0){
-                    stack.push(new Noeud(beliefs[posX][posY - 1],n,"gauche"));
-                }
-
-                *//* Mouvement Droite *//*
-                if(posY + 1 < 5){
-                    stack.push(new Noeud(beliefs[posX][posY + 1],n,"droite"));
-                }
-                firstloop = false;
-            }
-
-        }
-        return null;
-    }*/
-
-    public Noeud AlgorithmeAlgo(Case nBut, Noeud racine, ArrayList<Noeud> list){
-
-        if( list == null){
+        if (list == null) {
             list = new ArrayList(List.of(racine));
         }
 
+        /* Récupération des coordonnées de la case actuelle */
         int posX = racine.getC().getPosition().x;
         int posY = racine.getC().getPosition().y;
 
-        if(posX == nBut.getPosition().x && posY == nBut.getPosition().y) {
-            if (racine.getC().isLostjewel()) {
-                Noeud n = new Noeud(racine.getC(), racine, Noeud.Action.PICKUP);
-                setNodePerformance(-5, n, racine, nBut);
-                return n;
+        // Si on se trouve sur la case but (et donc qu'on a atteint notre but), on retourne immédiatement la solution
+        if (posX == nBut.getPosition().x && posY == nBut.getPosition().y) { return racine; }
+
+        /* Mouvement UP */
+        if (posX - 1 >= 0 && !visited.contains(beliefs[posX - 1][posY])) {
+            visited.add(beliefs[posX - 1][posY]);
+
+            // Si présénce de Bijou et Poussière en même temps dans la case du haut
+            if (beliefs[posX - 1][posY].isLostjewel() && beliefs[posX - 1][posY].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX - 1][posY], racine, Noeud.Action.UP);
+                setNodePerformance(-60, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX - 1][posY].isLostjewel()) {
+                Noeud n = new Noeud(beliefs[posX - 1][posY], racine, Noeud.Action.UP);
+                setNodePerformance(-45, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX - 1][posY].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX - 1][posY], racine, Noeud.Action.UP);
+                setNodePerformance(-30, n, racine, nBut);
+                list.add(n);
+            }else {
+                // Dans ce cas, la case du dessus est vide.
+                Noeud n = new Noeud(beliefs[posX - 1][posY], racine, Noeud.Action.UP);
+                setNodePerformance(10, n, racine, nBut);
+                list.add(n);
             }
+        }
 
-            if (racine.getC().isDirtyspace()) {
-                Noeud n = new Noeud(racine.getC(), racine, Noeud.Action.VACUUM);
-                setNodePerformance(-2, n, racine, nBut);
-                if (racine.getC().isLostjewel()) {
-                    setNodePerformance(20, n, racine, nBut);
-                }
-                return n;
+        // Le principe est le même pour les autres mouvements
+
+        /* Mouvement DOWN */
+        if (posX + 1 < 5 && !visited.contains(beliefs[posX + 1][posY])) {
+            visited.add(beliefs[posX + 1][posY]);
+            if (beliefs[posX + 1][posY].isLostjewel() && beliefs[posX + 1][posY].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX + 1][posY], racine, Noeud.Action.DOWN);
+                setNodePerformance(-60, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX + 1][posY].isLostjewel()) {
+                Noeud n = new Noeud(beliefs[posX + 1][posY], racine, Noeud.Action.DOWN);
+                setNodePerformance(-45, n, racine, nBut);
+                list.add(n);
+            }else if (racine.getC().isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX + 1][posY], racine, Noeud.Action.DOWN);
+                setNodePerformance(-30, n, racine, nBut);
+                list.add(n);
+            }else {
+                Noeud n = new Noeud(beliefs[posX + 1][posY], racine, Noeud.Action.DOWN);
+                setNodePerformance(10, n, racine, nBut);
+                list.add(n);
             }
-            return racine;
         }
 
-        if(racine.getC().isDirtyspace()){
-            Noeud n = new Noeud(beliefs[posX][posY], racine, Noeud.Action.VACUUM);
-            setNodePerformance(-2, n, racine, nBut);
-            list.add(n);
+        /* Mouvement LEFT */
+        if (posY - 1 >= 0 && !visited.contains(beliefs[posX][posY - 1])) {
+            visited.add(beliefs[posX][posY - 1]);
+            if (beliefs[posX][posY - 1].isLostjewel() && beliefs[posX][posY - 1].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX][posY - 1], racine, Noeud.Action.LEFT);
+                setNodePerformance(-55, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX][posY - 1].isLostjewel()) {
+                Noeud n = new Noeud(beliefs[posX][posY - 1], racine, Noeud.Action.LEFT);
+                setNodePerformance(-45, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX][posY - 1].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX][posY - 1], racine, Noeud.Action.LEFT);
+                setNodePerformance(-30, n, racine, nBut);
+                list.add(n);
+            }else {
+                Noeud n = new Noeud(beliefs[posX][posY - 1], racine, Noeud.Action.LEFT);
+                setNodePerformance(10, n, racine, nBut);
+                list.add(n);
+            }
         }
 
-        if(racine.getC().isLostjewel()){
-            Noeud n = new Noeud(beliefs[posX][posY], racine, Noeud.Action.PICKUP);
-            setNodePerformance(-5, n, racine, nBut);
-            list.add(n);
+        /* Mouvement RIGHT */
+        if (posY + 1 < 5 && !visited.contains(beliefs[posX][posY + 1])) {
+            visited.add(beliefs[posX][posY + 1]);
+            if (beliefs[posX][posY + 1].isLostjewel() && beliefs[posX][posY + 1].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX][posY + 1], racine, Noeud.Action.RIGHT);
+                setNodePerformance(-55, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX][posY + 1].isLostjewel()) {
+                Noeud n = new Noeud(beliefs[posX][posY + 1], racine, Noeud.Action.RIGHT);
+                setNodePerformance(-45, n, racine, nBut);
+                list.add(n);
+            }else if (beliefs[posX][posY + 1].isDirtyspace()) {
+                Noeud n = new Noeud(beliefs[posX][posY + 1], racine, Noeud.Action.RIGHT);
+                setNodePerformance(-30, n, racine, nBut);
+                list.add(n);
+            }else {
+                Noeud n = new Noeud(beliefs[posX][posY + 1], racine, Noeud.Action.RIGHT);
+                setNodePerformance(10, n, racine, nBut);
+                list.add(n);
+            }
         }
 
-        if (posX - 1 >= 0) {
-            Noeud n = new Noeud(beliefs[posX - 1][posY], racine, Noeud.Action.UP);
-            setNodePerformance(10, n, racine, nBut);
-            list.add(n);
-        }
-
-        if (posX + 1 < 5) {
-            Noeud n = new Noeud(beliefs[posX + 1][posY], racine, Noeud.Action.DOWN);
-            setNodePerformance(10, n, racine, nBut);
-            list.add(n);
-        }
-
-        if (posY - 1 >= 0) {
-            Noeud n = new Noeud(beliefs[posX][posY - 1], racine, Noeud.Action.LEFT);
-            setNodePerformance(10, n, racine, nBut);
-            list.add(n);
-        }
-
-        if (posY + 1 < 5) {
-            Noeud n = new Noeud(beliefs[posX][posY + 1], racine, Noeud.Action.RIGHT);
-            setNodePerformance(10, n, racine, nBut);
-            list.add(n);;
-        }
-
-            //return racine;
+        // On retire le noeud exploré de la liste des noeuds que l'on peut encore explorer
         list.remove(racine);
-
-        return AlgorithmeAlgo(nBut, evaluateBest(list), list);
-
+        return AlgorithmeAStar(nBut, evaluateBest(list), list, visited);
 
     }
 
@@ -356,13 +357,22 @@ public class Agent extends Thread {
 
 
     private void setNodePerformance(double desireCost, Noeud node, Noeud parent, Case but){
-        node.setPerformance(parent.getPerformance());
-        // f(n) = distance de manhattan + désirabilité d'action
+
+        // Les coup dans l'arbre sont cumulatif entre chaque noeud.
+        double distManhParent = Math.abs(but.getPosition().x - parent.getC().getPosition().x) + Math.abs(but.getPosition().y - parent.getC().getPosition().y);
+        node.setPerformance(parent.getPerformance() - distManhParent);
+
+        // f(n) = distance de manhattan + coup de désirabilité d'action
+        // Le coup de désirabilité est le coup qui incitera l'agent a se déplacer vers une case car il risque d'y trouver quelque chose.
         double dist = Math.abs(but.getPosition().x - node.getC().getPosition().x) + Math.abs(but.getPosition().y - node.getC().getPosition().y);
         node.setPerformance(dist);
         node.setPerformance(desireCost);
     }
 
+
+    /*
+    * La fonction evaluateBest retourne le noeud dont la performance est minimale, i.e la meilleure performance.
+     */
     private Noeud evaluateBest(List<Noeud> actions){
         Noeud bestNode = actions.get(0);
         for (Noeud n: actions) {

@@ -5,6 +5,7 @@ import Environnement.Case;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Effecteur {
 
@@ -21,7 +22,7 @@ public class Effecteur {
             for(Noeud n : intention){
                 Case[][] temp = Environnement.getCarte();
                 Point p = n.getC().getPosition();
-                if (n.getAction() == null){ return;}
+                if (n.getAction() == null){ continue;}
                 switch(n.getAction()){
                     case RIGHT:
                         temp[p.x][p.y - 1].setAgent(false);
@@ -70,14 +71,18 @@ public class Effecteur {
                         break;
 
                 }
+
+                /* On affiche la liste d'actions de l'agent, nous permettant de retracer son chemin, et ce qu'il a nettoyer */
                 System.out.println( " action : " + n.getAction() + " x = " + n.getC().getPosition().x + " y = " + n.getC().getPosition().y );
+
                 if(n == intention.get(intention.size()-1)){
                     System.out.println(" ---FIN ACTION--- ");
                 }
             }
+            intention.clear();
+
         }
     }
-
 
 
     public int getPerf() {

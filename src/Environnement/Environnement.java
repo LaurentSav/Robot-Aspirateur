@@ -8,8 +8,8 @@ import java.util.Random;
 public class Environnement extends Thread{
 
     private static Case[][] Carte;
-    private double DirtPercentage = 25;
-    private double JewelPercentage = 15;
+    private double DirtPercentage = 50;
+    private double JewelPercentage = 70;
 
 
     public Environnement() {
@@ -40,7 +40,7 @@ public class Environnement extends Thread{
 
             System.out.println(this);
             try{
-                Thread.sleep(1000);
+                Thread.sleep(2000);
             }catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -52,6 +52,10 @@ public class Environnement extends Thread{
     }
     public static synchronized void setCarte(Case[][] carte){
         Carte = carte;
+    }
+
+    public Case[][] getCartes(){
+        return Carte;
     }
 
     public void GenerateDirt(){
